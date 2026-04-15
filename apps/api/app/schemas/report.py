@@ -24,3 +24,26 @@ class ReportOut(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ReportCitationOut(BaseModel):
+    id: int
+    source_type: str
+    source_name: str
+    reference: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ReportSectionOut(BaseModel):
+    id: int
+    title: str
+    body: str
+    order_index: int
+    citations: list[ReportCitationOut]
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ReportDetailOut(ReportOut):
+    sections: list[ReportSectionOut]

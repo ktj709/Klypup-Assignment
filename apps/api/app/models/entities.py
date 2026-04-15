@@ -59,5 +59,39 @@ class ResearchReport(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
+    sections: Mapped[list["ReportSection"]] = relationship(
+        back_populates="report",
+        cascade="all, delete-orphan",
+        order_by="ReportSection.order_index",
+    )
+
+
+class ReportSection(Base):
+    __tablename__ = "report_sections"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    report_id: Mapped[int] = mapped_column(ForeignKey("research_reports.id", ondelete="CASCADE"), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    order_index: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    report: Mapped[ResearchReport] = relationship(back_populates="sections")
+    citations: Mapped[list["ReportCitation"]] = relationship(
+        back_populates="section",
+        cascade="all, delete-orphan",
+    )
+
+
+class ReportCitation(Base):
+    __tablename__ = "report_citations"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    section_id: Mapped[int] = mapped_column(ForeignKey("report_sections.id", ondelete="CASCADE"), nullable=False)
+    source_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    source_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    reference: Mapped[str] = mapped_column(Text, nullable=False)
+
+    section: Mapped[ReportSection] = relationship(back_populates="citations")
+
 
 Index("ix_reports_org_created", ResearchReport.org_id, ResearchReport.created_at)

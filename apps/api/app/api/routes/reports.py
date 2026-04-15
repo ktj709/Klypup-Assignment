@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.core.tenant import get_tenant_context
 from app.db.session import get_db
-from app.models.entities import ResearchReport, Role
+from app.models.entities import ReportSection, ResearchReport, Role
 from app.schemas.auth import TenantContext
-from app.schemas.report import ReportCreate, ReportOut, ReportUpdate
+from app.schemas.report import ReportCreate, ReportDetailOut, ReportOut, ReportUpdate
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
@@ -23,6 +23,23 @@ def list_reports(
         .all()
     )
     return reports
+
+
+@router.get("/{report_id}", response_model=ReportDetailOut)
+def get_report_detail(
+    report_id: int,
+    db: Session = Depends(get_db),
+    tenant: TenantContext = Depends(get_tenant_context),
+) -> ResearchReport:
+    report = (
+        db.query(ResearchReport)
+        .options(selectinload(ResearchReport.sections).selectinload(ReportSection.citations))
+        .filter(ResearchReport.id == report_id, ResearchReport.org_id == tenant.org_id)
+        .first()
+    )
+    if not report:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
+    return report
 
 
 @router.post("", response_model=ReportOut, status_code=status.HTTP_201_CREATED)

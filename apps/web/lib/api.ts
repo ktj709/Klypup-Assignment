@@ -8,6 +8,25 @@ export type Report = {
   created_at: string;
 };
 
+export type ReportCitation = {
+  id: number;
+  source_type: string;
+  source_name: string;
+  reference: string;
+};
+
+export type ReportSection = {
+  id: number;
+  title: string;
+  body: string;
+  order_index: number;
+  citations: ReportCitation[];
+};
+
+export type ReportDetail = Report & {
+  sections: ReportSection[];
+};
+
 export type ResearchSection = {
   title: string;
   body: string;
@@ -74,6 +93,21 @@ export async function createReport(
 
   if (!response.ok) {
     throw new Error(`Failed to create report: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export async function getReportById(accessToken: string, reportId: number): Promise<ReportDetail> {
+  const response = await fetch(`${API_BASE_URL}/reports/${reportId}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch report details: ${response.status}`);
   }
 
   return response.json();
