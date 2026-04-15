@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     auth0_algorithms: str = "RS256"
 
     gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.0-flash"
     news_api_key: str = ""
     faiss_index_path: str = "data/faiss/index.bin"
     faiss_meta_path: str = "data/faiss/meta.json"

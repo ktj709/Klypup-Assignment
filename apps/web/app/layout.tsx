@@ -21,6 +21,7 @@ export default function RootLayout({
             </Link>
             <nav>
               <Link href="/reports">Reports</Link>
+              <Link href="/watchlist">Watchlist</Link>
               <a href="/auth/login">Login</a>
               <a href="/auth/logout">Logout</a>
             </nav>

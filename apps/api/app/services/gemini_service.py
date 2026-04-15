@@ -1,10 +1,58 @@
 import json
+import re
+from typing import Any
 
 from google import genai
 from google.genai import types
 
 from app.core.config import get_settings
 from app.schemas.research import Section
+
+
+def _extract_json_object(text: str) -> dict[str, Any] | None:
+    match = re.search(r"\{[\s\S]*\}", text)
+    if not match:
+        return None
+    try:
+        return json.loads(match.group(0))
+    except json.JSONDecodeError:
+        return None
+
+
+def plan_tools(query: str) -> dict[str, Any] | None:
+    settings = get_settings()
+    if not settings.gemini_api_key:
+        return None
+
+    client = genai.Client(api_key=settings.gemini_api_key)
+
+    instruction = (
+        "You are a tool planner for an investment research system. "
+        "Return only valid JSON with this exact shape: "
+        '{"tickers": ["NVDA"], "use_market_data": true, "use_news": true, "use_documents": false}. '
+        "Rules: identify up to 5 stock tickers if present, and set tool flags based on user intent. "
+        "Do not include any extra keys or prose."
+    )
+
+    response = client.models.generate_content(
+        model=settings.gemini_model,
+        config=types.GenerateContentConfig(temperature=0.0),
+        contents=f"{instruction}\n\nQuery:\n{query}",
+    )
+
+    parsed = _extract_json_object(response.text or "")
+    if not parsed:
+        return None
+
+    tickers_raw = parsed.get("tickers", [])
+    tickers = [str(item).upper() for item in tickers_raw if isinstance(item, str)][:5]
+
+    return {
+        "tickers": tickers,
+        "use_market_data": bool(parsed.get("use_market_data", False)),
+        "use_news": bool(parsed.get("use_news", False)),
+        "use_documents": bool(parsed.get("use_documents", False)),
+    }
 
 
 def synthesize_summary(query: str, sections: list[Section], tools_used: list[str]) -> str | None:
@@ -33,7 +81,7 @@ def synthesize_summary(query: str, sections: list[Section], tools_used: list[str
     )
 
     response = client.models.generate_content(
-        model="gemini-2.0-flash",
+        model=settings.gemini_model,
         config=types.GenerateContentConfig(temperature=0.2),
         contents=f"{instruction}\n\nData:\n{json.dumps(prompt_payload)}",
     )

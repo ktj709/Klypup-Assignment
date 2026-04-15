@@ -61,6 +61,7 @@ def run_research_and_save(
             )
 
     db.commit()
+    result.report_id = report.id
     return result
 
 

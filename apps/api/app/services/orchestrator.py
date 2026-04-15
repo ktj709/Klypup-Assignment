@@ -2,7 +2,7 @@ import re
 
 from app.schemas.research import Citation, ResearchRequest, ResearchResponse, Section
 from app.services.document_retrieval import retrieve_documents
-from app.services.gemini_service import synthesize_summary
+from app.services.gemini_service import plan_tools, synthesize_summary
 from app.services.market_data import fetch_market_snapshot
 from app.services.news_data import fetch_news
 
@@ -33,10 +33,23 @@ def run_research(request: ResearchRequest) -> ResearchResponse:
     query = request.query
     tickers = _extract_tickers(query)
 
+    use_market_data = bool(tickers)
+    use_news = _needs_news(query)
+    use_documents = _needs_documents(query)
+
+    plan = plan_tools(query)
+    if plan is not None:
+        planned_tickers = plan.get("tickers", [])
+        if planned_tickers:
+            tickers = planned_tickers
+        use_market_data = plan.get("use_market_data", use_market_data)
+        use_news = plan.get("use_news", use_news)
+        use_documents = plan.get("use_documents", use_documents)
+
     sections: list[Section] = []
     tools_used: list[str] = []
 
-    if tickers:
+    if use_market_data and tickers:
         market_lines: list[str] = []
         market_citations: list[Citation] = []
         for ticker in tickers:
@@ -61,7 +74,7 @@ def run_research(request: ResearchRequest) -> ResearchResponse:
         )
         tools_used.append("market_data")
 
-    if _needs_news(query):
+    if use_news:
         company = tickers[0] if tickers else query.split(" ")[0]
         items = fetch_news(company)
         news_body = "\n".join(
@@ -75,7 +88,7 @@ def run_research(request: ResearchRequest) -> ResearchResponse:
         sections.append(Section(title="News and Sentiment", body=news_body, citations=news_citations))
         tools_used.append("news_data")
 
-    if _needs_documents(query):
+    if use_documents:
         hits = retrieve_documents(query)
         doc_body = "\n".join(f"{hit.title}: {hit.snippet}" for hit in hits)
         doc_citations = [
@@ -103,5 +116,5 @@ def run_research(request: ResearchRequest) -> ResearchResponse:
         title="AI Research Result",
         executive_summary=draft_summary,
         sections=sections,
-        tools_used=tools_used,
+        tools_used=list(dict.fromkeys(tools_used)),
     )

@@ -18,6 +18,7 @@ class Section(BaseModel):
 
 
 class ResearchResponse(BaseModel):
+    report_id: int | None = None
     title: str
     executive_summary: str
     sections: list[Section]

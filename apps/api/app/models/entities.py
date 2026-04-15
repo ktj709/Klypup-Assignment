@@ -66,6 +66,10 @@ class ResearchReport(Base):
         cascade="all, delete-orphan",
         order_by="ReportSection.order_index",
     )
+    tags: Mapped[list["ReportTag"]] = relationship(
+        back_populates="report",
+        cascade="all, delete-orphan",
+    )
 
 
 class ReportSection(Base):
@@ -108,6 +112,27 @@ class OrganizationInvite(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     organization: Mapped[Organization] = relationship(back_populates="invites")
+
+
+class ReportTag(Base):
+    __tablename__ = "report_tags"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    report_id: Mapped[int] = mapped_column(ForeignKey("research_reports.id", ondelete="CASCADE"), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+
+    report: Mapped[ResearchReport] = relationship(back_populates="tags")
+
+
+class CompanyWatchlist(Base):
+    __tablename__ = "company_watchlists"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    org_id: Mapped[int] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True)
+    ticker: Mapped[str] = mapped_column(String(16), nullable=False, index=True)
+    company_name: Mapped[str | None] = mapped_column(String(255))
+    created_by_user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 Index("ix_reports_org_created", ResearchReport.org_id, ResearchReport.created_at)

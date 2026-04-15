@@ -22,6 +22,13 @@ class ReportOut(BaseModel):
     status: str
     summary: str | None
     created_at: datetime
+    tags: list["ReportTagOut"] = []
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ReportTagOut(BaseModel):
+    name: str
 
     model_config = ConfigDict(from_attributes=True)
 

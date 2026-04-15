@@ -1,10 +1,15 @@
 import { auth0 } from "@/lib/auth0";
 import { getReportById, getReports } from "@/lib/api";
-import { ReportDetailCard } from "@/components/ReportDetail";
+import { ReportDetailInteractive } from "@/components/ReportDetailInteractive";
 import { ReportTable } from "@/components/ReportTable";
 
-export default async function ReportsPage() {
+export default async function ReportsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ reportId?: string; q?: string; tag?: string }>;
+}) {
   const session = await auth0.getSession();
+  const params = await searchParams;
 
   if (!session) {
     return (
@@ -18,18 +23,29 @@ export default async function ReportsPage() {
     );
   }
 
-  const reports = await getReports(session.tokenSet.accessToken);
-  const latestReport = reports.length > 0 ? await getReportById(session.tokenSet.accessToken, reports[0].id) : null;
+  const reports = await getReports(session.tokenSet.accessToken, {
+    search: params.q,
+    tag: params.tag,
+  });
+  const selectedId = params.reportId ? Number(params.reportId) : reports[0]?.id;
+  const latestReport = selectedId ? await getReportById(session.tokenSet.accessToken, selectedId) : null;
 
   return (
     <section>
       <h1>Research reports</h1>
       <p className="subtle">Data is scoped by organization through backend tenant middleware.</p>
+      <form className="inline-form" method="get">
+        <input className="input" defaultValue={params.q || ""} name="q" placeholder="Search title or query" />
+        <input className="input" defaultValue={params.tag || ""} name="tag" placeholder="Filter by tag" />
+        <button className="button" type="submit">
+          Apply Filters
+        </button>
+      </form>
       <ReportTable reports={reports} />
       {latestReport ? (
         <>
-          <h2>Latest report details</h2>
-          <ReportDetailCard report={latestReport} />
+          <h2>Selected report details</h2>
+          <ReportDetailInteractive accessToken={session.tokenSet.accessToken} report={latestReport} />
         </>
       ) : null}
     </section>

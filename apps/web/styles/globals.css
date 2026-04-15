@@ -74,6 +74,23 @@ body {
   margin-top: 8px;
 }
 
+.input {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 10px;
+  font: inherit;
+  min-width: 190px;
+  background: #fff;
+}
+
+.inline-form {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+  align-items: center;
+}
+
 .result-card {
   margin-top: 18px;
   border: 1px solid var(--border);
@@ -152,6 +169,26 @@ body {
   vertical-align: top;
 }
 
+.tag {
+  display: inline-flex;
+  align-items: center;
+  margin: 2px 6px 2px 0;
+  padding: 2px 8px;
+  border: 1px solid #99f6e4;
+  border-radius: 999px;
+  background: #ccfbf1;
+  color: #115e59;
+  font-size: 12px;
+}
+
+.tag-button {
+  cursor: pointer;
+}
+
+.tags-row {
+  margin: 8px 0;
+}
+
 .subtle,
 .empty-state {
   color: var(--muted);
@@ -170,5 +207,10 @@ body {
 
   .chart-grid {
     grid-template-columns: 1fr;
+  }
+
+  .inline-form {
+    flex-direction: column;
+    align-items: stretch;
   }
 }

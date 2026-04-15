@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { createReport, ResearchResponse, runResearch } from "@/lib/api";
+import { ResearchResponse, runResearch, runResearchAndSave } from "@/lib/api";
 import { ResearchCharts } from "@/components/ResearchCharts";
 
 type ResearchConsoleProps = {
@@ -32,19 +32,16 @@ export function ResearchConsole({ accessToken }: ResearchConsoleProps) {
   }
 
   async function onSaveReport() {
-    if (!result) {
+    if (!query.trim()) {
       return;
     }
 
     setIsLoading(true);
     setStatus("");
     try {
-      await createReport(accessToken, {
-        title: result.title,
-        query_text: query,
-        summary: result.executive_summary,
-      });
-      setStatus("Report saved to your workspace.");
+      const saved = await runResearchAndSave(accessToken, query);
+      setResult(saved);
+      setStatus(saved.report_id ? `Report saved with ID ${saved.report_id}.` : "Report saved to your workspace.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Failed to save report.");
     } finally {
