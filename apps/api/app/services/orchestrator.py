@@ -2,6 +2,7 @@ import re
 
 from app.schemas.research import Citation, ResearchRequest, ResearchResponse, Section
 from app.services.document_retrieval import retrieve_documents
+from app.services.gemini_service import synthesize_summary
 from app.services.market_data import fetch_market_snapshot
 from app.services.news_data import fetch_news
 
@@ -93,9 +94,14 @@ def run_research(request: ResearchRequest) -> ResearchResponse:
             )
         )
 
+    draft_summary = "Automated research summary generated from selected data tools."
+    synthesized = synthesize_summary(query=query, sections=sections, tools_used=tools_used)
+    if synthesized:
+        draft_summary = synthesized
+
     return ResearchResponse(
         title="AI Research Result",
-        executive_summary="Automated research summary generated from selected data tools.",
+        executive_summary=draft_summary,
         sections=sections,
         tools_used=tools_used,
     )
