@@ -1,0 +1,1 @@
+NVIDIA reported strong year-over-year data center revenue growth driven by enterprise AI demand. Management highlighted hyperscaler expansion and sustained GPU demand across model training workloads.

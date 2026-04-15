@@ -6,6 +6,7 @@ from app.db.session import get_db
 from app.models.entities import ReportCitation, ReportSection, ResearchReport
 from app.schemas.auth import TenantContext
 from app.schemas.research import ResearchRequest, ResearchResponse
+from app.services.document_retrieval import ingest_documents
 from app.services.orchestrator import run_research
 
 router = APIRouter(prefix="/research", tags=["research"])
@@ -61,3 +62,12 @@ def run_research_and_save(
 
     db.commit()
     return result
+
+
+@router.post("/ingest-documents")
+def ingest_document_corpus(
+    tenant: TenantContext = Depends(get_tenant_context),
+) -> dict[str, int | str]:
+    _ = tenant
+    count = ingest_documents()
+    return {"status": "ok", "ingested_chunks": count}

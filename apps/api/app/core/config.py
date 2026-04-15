@@ -16,6 +16,8 @@ class Settings(BaseSettings):
 
     gemini_api_key: str = ""
     news_api_key: str = ""
+    faiss_index_path: str = "data/faiss/index.bin"
+    faiss_meta_path: str = "data/faiss/meta.json"
 
     cors_origins: str = "http://localhost:3000"
 

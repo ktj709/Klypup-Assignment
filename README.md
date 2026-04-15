@@ -36,9 +36,18 @@ This repository contains a full-stack implementation scaffold for Option A using
 - Auth0-aware tenant middleware implemented on backend
 - Tenant-scoped report CRUD endpoints implemented
 - Research endpoint scaffolded with dynamic tool selection
+- FAISS local ingestion and retrieval pipeline added for sample filings
+- Run-and-save endpoint persists structured sections and citations
 
 ## Next Milestones
 - Replace research synthesis stub with Gemini function-calling orchestration
-- Add FAISS ingestion pipeline for filings and earnings docs
 - Build structured UI components for report sections and citations
 - Add deployment and demo assets
+
+## Useful API Calls
+- POST /api/v1/research/ingest-documents
+   - Builds the FAISS index from sample files under apps/api/data/documents
+- POST /api/v1/research/run
+   - Runs dynamic tool selection and returns structured response
+- POST /api/v1/research/run-and-save
+   - Runs research and persists report, sections, and citations
