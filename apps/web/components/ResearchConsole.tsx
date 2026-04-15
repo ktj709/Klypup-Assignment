@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { createReport, ResearchResponse, runResearch } from "@/lib/api";
+import { ResearchCharts } from "@/components/ResearchCharts";
 
 type ResearchConsoleProps = {
   accessToken: string;
@@ -80,6 +81,7 @@ export function ResearchConsole({ accessToken }: ResearchConsoleProps) {
           <h3>{result.title}</h3>
           <p>{result.executive_summary}</p>
           <p className="subtle">Tools used: {result.tools_used.join(", ") || "none"}</p>
+          <ResearchCharts result={result} />
           {result.sections.map((section) => (
             <section key={section.title} className="result-section">
               <h4>{section.title}</h4>

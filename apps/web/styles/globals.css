@@ -96,6 +96,20 @@ body {
   padding: 10px;
 }
 
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.chart-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  background: #ffffff;
+}
+
 .hero p {
   color: var(--muted);
 }
@@ -152,5 +166,9 @@ body {
 
   .hero-actions {
     flex-direction: column;
+  }
+
+  .chart-grid {
+    grid-template-columns: 1fr;
   }
 }

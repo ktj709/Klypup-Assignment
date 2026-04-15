@@ -31,6 +31,13 @@ This repository contains a full-stack implementation scaffold for Option A using
 3. Run app:
    - `npm run dev`
 
+## Setup Note
+- Docker is intentionally not included in this submission scope.
+- The evaluator can run the app locally using the steps above.
+
+## Demo Seed Data
+- Run `python scripts/seed_demo.py` from `apps/api` to create two sample organizations and memberships.
+
 ## Current Status
 - Baseline monorepo scaffold complete
 - Auth0-aware tenant middleware implemented on backend
