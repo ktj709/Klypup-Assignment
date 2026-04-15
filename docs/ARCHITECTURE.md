@@ -33,9 +33,11 @@
 - users
 - organization_memberships
 - research_reports
-
-## Pending Expansion
 - report_sections
 - report_citations
-- watchlists
+- report_tags
+- company_watchlists
+- organization_invites
+
+## Pending Expansion
 - activity_logs

@@ -54,6 +54,22 @@ export type WatchlistItem = {
   created_at: string;
 };
 
+export type Membership = {
+  id: number;
+  org_id: number;
+  user_id: number;
+  role: "admin" | "analyst";
+};
+
+export type OrgInvite = {
+  id: number;
+  org_id: number;
+  code: string;
+  expires_at: string | null;
+  used_at: string | null;
+  created_at: string;
+};
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
 
 export async function getReports(
@@ -231,4 +247,34 @@ export async function deleteWatchlistItem(accessToken: string, watchlistId: numb
   if (!response.ok) {
     throw new Error(`Failed to delete watchlist item: ${response.status}`);
   }
+}
+
+export async function getOrgMembers(accessToken: string): Promise<Membership[]> {
+  const response = await fetch(`${API_BASE_URL}/orgs/members`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch members: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export async function createOrgInvite(accessToken: string): Promise<OrgInvite> {
+  const response = await fetch(`${API_BASE_URL}/orgs/invites`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to create invite: ${response.status}`);
+  }
+
+  return response.json();
 }

@@ -42,15 +42,17 @@ This repository contains a full-stack implementation scaffold for Option A using
 - Baseline monorepo scaffold complete
 - Auth0-aware tenant middleware implemented on backend
 - Tenant-scoped report CRUD endpoints implemented
-- Research endpoint scaffolded with dynamic tool selection
+- Research orchestration includes Gemini-assisted planning with safe fallback
 - FAISS local ingestion and retrieval pipeline added for sample filings
 - Run-and-save endpoint persists structured sections and citations
 - Organization invite-code endpoints added for admin-managed onboarding
+- Watchlist CRUD is implemented with dedicated UI page
+- Report search and tag management are implemented in backend and frontend
+- Admin page supports member view and invite-code creation
 
 ## Next Milestones
-- Replace research synthesis stub with Gemini function-calling orchestration
-- Build structured UI components for report sections and citations
-- Add deployment and demo assets
+- Add deployment and final demo assets
+- Expand test coverage beyond core tenant/RBAC checks
 
 ## Useful API Calls
 - POST /api/v1/research/ingest-documents
@@ -59,3 +61,19 @@ This repository contains a full-stack implementation scaffold for Option A using
    - Runs dynamic tool selection and returns structured response
 - POST /api/v1/research/run-and-save
    - Runs research and persists report, sections, and citations
+- GET /api/v1/reports?search=<query>&tag=<tag>
+   - Retrieves tenant-scoped reports with optional search and tag filtering
+- POST /api/v1/reports/{report_id}/tags?name=<tag>
+   - Adds a tag to a report
+- DELETE /api/v1/reports/{report_id}/tags/{tag_name}
+   - Removes a tag from a report
+- GET /api/v1/watchlist
+   - Lists organization watchlist items
+- POST /api/v1/watchlist
+   - Adds ticker to watchlist
+- DELETE /api/v1/watchlist/{watchlist_id}
+   - Removes watchlist item
+- GET /api/v1/orgs/members
+   - Lists organization memberships
+- POST /api/v1/orgs/invites
+   - Creates invite code (admin only)
