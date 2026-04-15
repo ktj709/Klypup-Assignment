@@ -38,6 +38,7 @@ This repository contains a full-stack implementation scaffold for Option A using
 - Research endpoint scaffolded with dynamic tool selection
 - FAISS local ingestion and retrieval pipeline added for sample filings
 - Run-and-save endpoint persists structured sections and citations
+- Organization invite-code endpoints added for admin-managed onboarding
 
 ## Next Milestones
 - Replace research synthesis stub with Gemini function-calling orchestration

@@ -1,5 +1,6 @@
 from datetime import datetime
 from enum import Enum
+import secrets
 
 from sqlalchemy import DateTime, Enum as SqlEnum, ForeignKey, Index, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -20,6 +21,7 @@ class Organization(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     memberships: Mapped[list["OrganizationMembership"]] = relationship(back_populates="organization")
+    invites: Mapped[list["OrganizationInvite"]] = relationship(back_populates="organization")
 
 
 class User(Base):
@@ -92,6 +94,20 @@ class ReportCitation(Base):
     reference: Mapped[str] = mapped_column(Text, nullable=False)
 
     section: Mapped[ReportSection] = relationship(back_populates="citations")
+
+
+class OrganizationInvite(Base):
+    __tablename__ = "organization_invites"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    org_id: Mapped[int] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True)
+    code: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, default=lambda: secrets.token_urlsafe(24))
+    created_by_user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    organization: Mapped[Organization] = relationship(back_populates="invites")
 
 
 Index("ix_reports_org_created", ResearchReport.org_id, ResearchReport.created_at)

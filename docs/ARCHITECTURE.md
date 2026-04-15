@@ -26,6 +26,7 @@
 - Tenant is resolved from authenticated user membership.
 - All report queries enforce `org_id` scoping.
 - RBAC checks on write actions.
+- Organization invite-code onboarding is supported via admin-created invite tokens.
 
 ## Core Tables (Implemented Baseline)
 - organizations
