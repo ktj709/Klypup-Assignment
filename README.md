@@ -92,10 +92,17 @@ Suggested captures:
 5. Admin page with invite code generation
 6. Tenant isolation demonstration (two org contexts)
 
+Planned screenshot references:
+1. [Home Dashboard](docs/screenshots/01-home-dashboard.png)
+2. [Research Result](docs/screenshots/02-research-result.png)
+3. [Reports with Search and Tags](docs/screenshots/03-reports-search-tags.png)
+4. [Watchlist](docs/screenshots/04-watchlist.png)
+5. [Admin Invite Workflow](docs/screenshots/05-admin-invite.png)
+6. [Tenant Isolation Proof](docs/screenshots/06-tenant-isolation-demo.png)
+
 ## Known Limitations
-1. Advanced retry/circuit-breaker policy for all external tool calls is not fully implemented.
-2. Additional integration tests beyond tenant/RBAC baseline are still recommended.
-3. Live deployment URL is not included yet.
+1. Full circuit-breaker and distributed caching policy is not yet implemented.
+2. Live deployment URL is not included yet.
 
 ## Current Status
 - Baseline monorepo scaffold complete
@@ -113,7 +120,12 @@ Suggested captures:
 
 ## Next Milestones
 - Add deployment and final demo assets
-- Expand integration tests for watchlist and tag management
+- Add final screenshots to complete deliverable checklist
+
+## Presentation Assets
+1. Demo script: [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md)
+2. Interview Q&A prep: [docs/INTERVIEW_QA.md](docs/INTERVIEW_QA.md)
+3. Requirement checklist: [docs/ASSESSMENT_COMPLIANCE.md](docs/ASSESSMENT_COMPLIANCE.md)
 
 ## Useful API Calls
 - POST /api/v1/research/ingest-documents

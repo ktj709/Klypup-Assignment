@@ -17,12 +17,20 @@ export default async function WatchlistPage() {
     );
   }
 
-  const items = await getWatchlist(session.tokenSet.accessToken);
+  let items = [];
+  let loadError = "";
+
+  try {
+    items = await getWatchlist(session.tokenSet.accessToken);
+  } catch {
+    loadError = "Unable to load watchlist right now. Please retry.";
+  }
 
   return (
     <section>
       <h1>Watchlist</h1>
       <p className="subtle">Track companies for recurring research and quick access.</p>
+      {loadError ? <p className="error-text">{loadError}</p> : null}
       <WatchlistPanel accessToken={session.tokenSet.accessToken} initialItems={items} />
     </section>
   );

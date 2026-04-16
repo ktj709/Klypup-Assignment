@@ -219,6 +219,14 @@ body {
   color: var(--muted);
 }
 
+.error-text {
+  color: #b91c1c;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
 @media (max-width: 768px) {
   .topbar-content {
     flex-direction: column;

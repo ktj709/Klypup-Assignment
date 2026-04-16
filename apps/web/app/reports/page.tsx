@@ -23,12 +23,20 @@ export default async function ReportsPage({
     );
   }
 
-  const reports = await getReports(session.tokenSet.accessToken, {
-    search: params.q,
-    tag: params.tag,
-  });
-  const selectedId = params.reportId ? Number(params.reportId) : reports[0]?.id;
-  const latestReport = selectedId ? await getReportById(session.tokenSet.accessToken, selectedId) : null;
+  let reports = [];
+  let latestReport = null;
+  let loadError = "";
+
+  try {
+    reports = await getReports(session.tokenSet.accessToken, {
+      search: params.q,
+      tag: params.tag,
+    });
+    const selectedId = params.reportId ? Number(params.reportId) : reports[0]?.id;
+    latestReport = selectedId ? await getReportById(session.tokenSet.accessToken, selectedId) : null;
+  } catch {
+    loadError = "Unable to load reports right now. Please retry in a moment.";
+  }
 
   return (
     <section>
@@ -41,6 +49,7 @@ export default async function ReportsPage({
           Apply Filters
         </button>
       </form>
+      {loadError ? <p className="error-text">{loadError}</p> : null}
       <ReportTable reports={reports} />
       {latestReport ? (
         <>
