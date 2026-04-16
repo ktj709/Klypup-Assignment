@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     faiss_meta_path: str = "data/faiss/meta.json"
 
     cors_origins: str = "http://localhost:3000"
+    external_request_timeout_seconds: int = 12
+    external_request_retries: int = 2
+    request_logging_enabled: bool = True
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

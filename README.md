@@ -108,6 +108,8 @@ Suggested captures:
 - Watchlist CRUD is implemented with dedicated UI page
 - Report search and tag management are implemented in backend and frontend
 - Admin page supports member view and invite-code creation
+- Backend hardening includes request-id logging, external retry/timeout controls, and graceful AI/tool fallbacks
+- Integration tests cover tenant isolation, RBAC, report tagging/search, and watchlist CRUD isolation
 
 ## Next Milestones
 - Add deployment and final demo assets

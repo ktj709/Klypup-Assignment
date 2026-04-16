@@ -13,8 +13,11 @@ class MarketSnapshot:
 
 
 def fetch_market_snapshot(ticker: str) -> MarketSnapshot:
-    data = yf.Ticker(ticker)
-    info = data.info if data.info else {}
+    try:
+        data = yf.Ticker(ticker)
+        info = data.info if data.info else {}
+    except Exception:
+        info = {}
 
     return MarketSnapshot(
         ticker=ticker.upper(),

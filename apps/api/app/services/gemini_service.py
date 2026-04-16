@@ -34,11 +34,14 @@ def plan_tools(query: str) -> dict[str, Any] | None:
         "Do not include any extra keys or prose."
     )
 
-    response = client.models.generate_content(
-        model=settings.gemini_model,
-        config=types.GenerateContentConfig(temperature=0.0),
-        contents=f"{instruction}\n\nQuery:\n{query}",
-    )
+    try:
+        response = client.models.generate_content(
+            model=settings.gemini_model,
+            config=types.GenerateContentConfig(temperature=0.0),
+            contents=f"{instruction}\n\nQuery:\n{query}",
+        )
+    except Exception:
+        return None
 
     parsed = _extract_json_object(response.text or "")
     if not parsed:
@@ -80,11 +83,14 @@ def synthesize_summary(query: str, sections: list[Section], tools_used: list[str
         "Do not invent facts. If data is incomplete, state uncertainty explicitly."
     )
 
-    response = client.models.generate_content(
-        model=settings.gemini_model,
-        config=types.GenerateContentConfig(temperature=0.2),
-        contents=f"{instruction}\n\nData:\n{json.dumps(prompt_payload)}",
-    )
+    try:
+        response = client.models.generate_content(
+            model=settings.gemini_model,
+            config=types.GenerateContentConfig(temperature=0.2),
+            contents=f"{instruction}\n\nData:\n{json.dumps(prompt_payload)}",
+        )
+    except Exception:
+        return None
 
     text = (response.text or "").strip()
     return text or None

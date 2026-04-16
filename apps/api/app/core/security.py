@@ -1,4 +1,5 @@
 from typing import Any
+import time
 
 import requests
 from fastapi import Depends, HTTPException, status
@@ -13,6 +14,9 @@ from app.models.entities import OrganizationMembership, User
 from app.schemas.auth import CurrentUser
 
 security = HTTPBearer(auto_error=False)
+_JWKS_CACHE: dict[str, Any] | None = None
+_JWKS_CACHE_TS: float = 0.0
+_JWKS_CACHE_TTL_SECONDS = 300
 
 
 def _fetch_jwks() -> dict[str, Any]:
@@ -20,9 +24,29 @@ def _fetch_jwks() -> dict[str, Any]:
     if not settings.auth0_domain:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Auth0 domain not configured")
     jwks_url = f"https://{settings.auth0_domain}/.well-known/jwks.json"
-    response = requests.get(jwks_url, timeout=10)
-    response.raise_for_status()
-    return response.json()
+    global _JWKS_CACHE
+    global _JWKS_CACHE_TS
+
+    now = time.time()
+    if _JWKS_CACHE and (now - _JWKS_CACHE_TS) < _JWKS_CACHE_TTL_SECONDS:
+        return _JWKS_CACHE
+
+    retries = max(1, settings.external_request_retries + 1)
+    last_error: Exception | None = None
+    for attempt in range(retries):
+        try:
+            response = requests.get(jwks_url, timeout=settings.external_request_timeout_seconds)
+            response.raise_for_status()
+            _JWKS_CACHE = response.json()
+            _JWKS_CACHE_TS = time.time()
+            return _JWKS_CACHE
+        except requests.RequestException as exc:
+            last_error = exc
+            if attempt == retries - 1:
+                break
+            time.sleep(0.2 * (attempt + 1))
+
+    raise requests.RequestException("Unable to fetch JWKS after retries") from last_error
 
 
 def get_current_user(

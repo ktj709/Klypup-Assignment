@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import time
 
 import requests
 
@@ -35,20 +36,33 @@ def fetch_news(company: str, page_size: int = 5) -> list[NewsItem]:
     if not api_key:
         return []
 
-    response = requests.get(
-        "https://newsapi.org/v2/everything",
-        params={
-            "q": company,
-            "language": "en",
-            "sortBy": "publishedAt",
-            "pageSize": page_size,
-            "apiKey": api_key,
-        },
-        timeout=15,
-    )
-    response.raise_for_status()
+    payload = None
+    max_attempts = max(1, settings.external_request_retries + 1)
 
-    payload = response.json()
+    for attempt in range(max_attempts):
+        try:
+            response = requests.get(
+                "https://newsapi.org/v2/everything",
+                params={
+                    "q": company,
+                    "language": "en",
+                    "sortBy": "publishedAt",
+                    "pageSize": page_size,
+                    "apiKey": api_key,
+                },
+                timeout=settings.external_request_timeout_seconds,
+            )
+            response.raise_for_status()
+            payload = response.json()
+            break
+        except requests.RequestException:
+            if attempt == max_attempts - 1:
+                return []
+            time.sleep(0.25 * (attempt + 1))
+
+    if payload is None:
+        return []
+
     items: list[NewsItem] = []
     for article in payload.get("articles", []):
         title = article.get("title", "Untitled")
