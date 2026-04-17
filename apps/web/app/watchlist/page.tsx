@@ -1,5 +1,5 @@
 import { auth0 } from "@/lib/auth0";
-import { getWatchlist } from "@/lib/api";
+import { type WatchlistItem, getWatchlist } from "@/lib/api";
 import { WatchlistPanel } from "@/components/WatchlistPanel";
 
 export default async function WatchlistPage() {
@@ -17,7 +17,7 @@ export default async function WatchlistPage() {
     );
   }
 
-  let items = [];
+  let items: WatchlistItem[] = [];
   let loadError = "";
 
   try {

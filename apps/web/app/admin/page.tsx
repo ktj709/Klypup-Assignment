@@ -1,5 +1,5 @@
 import { auth0 } from "@/lib/auth0";
-import { getOrgMembers } from "@/lib/api";
+import { type Membership, getOrgMembers } from "@/lib/api";
 import { AdminPanel } from "@/components/AdminPanel";
 
 export default async function AdminPage() {
@@ -17,7 +17,7 @@ export default async function AdminPage() {
     );
   }
 
-  let members = [];
+  let members: Membership[] = [];
   try {
     members = await getOrgMembers(session.tokenSet.accessToken);
   } catch {

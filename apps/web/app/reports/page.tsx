@@ -1,5 +1,5 @@
 import { auth0 } from "@/lib/auth0";
-import { getReportById, getReports } from "@/lib/api";
+import { type Report, type ReportDetail, getReportById, getReports } from "@/lib/api";
 import { ReportDetailInteractive } from "@/components/ReportDetailInteractive";
 import { ReportTable } from "@/components/ReportTable";
 
@@ -23,8 +23,8 @@ export default async function ReportsPage({
     );
   }
 
-  let reports = [];
-  let latestReport = null;
+  let reports: Report[] = [];
+  let latestReport: ReportDetail | null = null;
   let loadError = "";
 
   try {

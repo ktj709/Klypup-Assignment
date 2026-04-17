@@ -2,14 +2,14 @@ import Link from "next/link";
 
 import { ResearchConsole } from "@/components/ResearchConsole";
 import { auth0 } from "@/lib/auth0";
-import { getReports, getWatchlist } from "@/lib/api";
+import { type Report, type WatchlistItem, getReports, getWatchlist } from "@/lib/api";
 
 export default async function HomePage() {
   const session = await auth0.getSession();
   const accessToken = session?.tokenSet.accessToken;
 
-  let recentReports = [];
-  let watchlist = [];
+  let recentReports: Report[] = [];
+  let watchlist: WatchlistItem[] = [];
   if (accessToken) {
     try {
       recentReports = await getReports(accessToken);
