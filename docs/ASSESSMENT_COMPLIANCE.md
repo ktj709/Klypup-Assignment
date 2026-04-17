@@ -56,6 +56,6 @@ Target workflows prepared:
 3. Role-based behavior: admin invite creation vs analyst access limitations.
 
 ## 8) Risk and Remaining Hardening
-1. Add broader integration tests for watchlist and report tagging endpoints.
-2. Add caching and explicit rate-limit protection for external tools.
-3. Finalize screenshots and optional deployment.
+1. Add caching and explicit rate-limit protection for external tools.
+2. Finalize screenshots and optional deployment.
+3. Expand test depth for failure paths (external timeouts, fallback behavior), beyond current happy-path and isolation coverage.

@@ -1,4 +1,5 @@
-from collections.abc import Generator
+from collections.abc import Callable, Generator
+from contextlib import contextmanager
 
 import pytest
 from fastapi.testclient import TestClient
@@ -66,6 +67,25 @@ def _override_get_db() -> Generator[Session, None, None]:
         yield db
     finally:
         db.close()
+
+
+@pytest.fixture
+def client_for_tenant() -> Callable[[int, Role, int], Generator[TestClient, None, None]]:
+    @contextmanager
+    def _factory(org_id: int, role: Role, user_id: int) -> Generator[TestClient, None, None]:
+        def tenant_override() -> TenantContext:
+            return TenantContext(org_id=org_id, role=role, user_id=user_id)
+
+        app.dependency_overrides[get_db] = _override_get_db
+        app.dependency_overrides[get_tenant_context] = tenant_override
+
+        try:
+            with TestClient(app) as client:
+                yield client
+        finally:
+            app.dependency_overrides.clear()
+
+    return _factory
 
 
 @pytest.fixture
