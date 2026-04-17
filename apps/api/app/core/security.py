@@ -99,6 +99,11 @@ def get_current_user(
     if not sub:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token missing sub")
 
+    # In REST mode, tenant provisioning and membership checks are handled in get_tenant_context
+    # via Supabase HTTP calls, so we must not touch SQLAlchemy here.
+    if settings.data_backend == "supabase_rest":
+        return CurrentUser(sub=sub, email=payload.get("email"), name=payload.get("name"))
+
     user = db.query(User).filter(User.auth0_sub == sub).first()
     if not user:
         user = User(
