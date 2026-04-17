@@ -7,8 +7,11 @@ class Settings(BaseSettings):
     app_name: str = "Klypup Research API"
     api_v1_prefix: str = "/api/v1"
     environment: str = "development"
+    data_backend: str = "sqlalchemy"
 
     database_url: str = "postgresql+psycopg2://postgres:postgres@localhost:5432/klypup"
+    supabase_url: str = ""
+    supabase_service_role_key: str = ""
 
     auth0_domain: str = ""
     auth0_audience: str = ""

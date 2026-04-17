@@ -60,4 +60,5 @@ async def request_logging_middleware(request: Request, call_next):
 
 @app.on_event("startup")
 def on_startup() -> None:
-    Base.metadata.create_all(bind=engine)
+    if settings.data_backend != "supabase_rest":
+        Base.metadata.create_all(bind=engine)
