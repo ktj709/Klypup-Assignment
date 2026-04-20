@@ -43,6 +43,7 @@ Option A was selected because it provides a strong balance of product impact and
 
 ## Setup Note
 - Docker is intentionally not included in this submission scope.
+- Setup instructions were validated on a clean local machine environment.
 - The evaluator can run the app locally using the steps above.
 
 ## Demo Seed Data
