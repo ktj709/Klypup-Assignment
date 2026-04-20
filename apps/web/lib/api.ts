@@ -72,6 +72,20 @@ export type OrgInvite = {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
 
+async function buildErrorMessage(prefix: string, response: Response): Promise<string> {
+  let detail = "";
+  try {
+    const payload = await response.json();
+    if (payload && typeof payload === "object" && "detail" in payload && typeof payload.detail === "string") {
+      detail = payload.detail;
+    }
+  } catch {
+    // Fall back to status-only message when response body is not JSON.
+  }
+
+  return detail ? `${prefix}: ${response.status} (${detail})` : `${prefix}: ${response.status}`;
+}
+
 export async function getReports(
   accessToken: string,
   filters?: { search?: string; tag?: string },
@@ -100,7 +114,7 @@ export async function getReports(
 }
 
 export async function runResearch(accessToken: string, query: string): Promise<ResearchResponse> {
-  const response = await fetch(`${API_BASE_URL}/research/run`, {
+  const response = await fetch(`/api/research/run`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -110,14 +124,14 @@ export async function runResearch(accessToken: string, query: string): Promise<R
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to run research: ${response.status}`);
+    throw new Error(await buildErrorMessage("Failed to run research", response));
   }
 
   return response.json();
 }
 
 export async function runResearchAndSave(accessToken: string, query: string): Promise<ResearchResponse> {
-  const response = await fetch(`${API_BASE_URL}/research/run-and-save`, {
+  const response = await fetch(`/api/research/run-and-save`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -127,7 +141,7 @@ export async function runResearchAndSave(accessToken: string, query: string): Pr
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to run and save research: ${response.status}`);
+    throw new Error(await buildErrorMessage("Failed to run and save research", response));
   }
 
   return response.json();
