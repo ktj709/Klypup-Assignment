@@ -1,150 +1,241 @@
 # Architecture
 
-## 1. System Overview
-This project implements Option A (Investment Research Dashboard) as a multi-tenant full-stack web app where AI is an integrated feature.
+## 1. System Architecture
+The project follows a decoupled architecture where the frontend serves as a thin client for the FastAPI backend, which acts as the central controller for authentication, database persistence, and AI orchestration.
 
 Primary components:
-1. Next.js frontend
-- Authenticated product UI for research, saved reports, watchlist, and admin workflows.
-2. FastAPI backend
-- Auth verification, tenant and RBAC enforcement, orchestration, CRUD APIs, and persistence.
-3. PostgreSQL (Supabase-compatible)
-- Shared-schema multi-tenant relational storage.
-4. FAISS local index
-- Document chunk retrieval for filing/earnings context.
-5. External tools
-- Yahoo Finance via yfinance.
-- NewsAPI (with planned RSS fallback).
-6. LLM layer (Gemini)
-- Tool planning and executive-summary synthesis.
+1. Client layer (`apps/web`): Next.js frontend for dashboard, reports, watchlist, and admin workflows.
+2. API layer (`apps/api`): FastAPI app with Auth0 JWT validation, tenant/RBAC resolution, business routes, and orchestration control.
+3. Data layer: PostgreSQL (Supabase-compatible) for tenant-scoped persistence plus FAISS index for document context retrieval.
+4. AI layer: Gemini for planning and summary synthesis.
+5. External APIs: Yahoo Finance (market data) and NewsAPI (news/sentiment).
 
-## 2. Architecture Diagram (Logical)
+## 2. System Architecture Diagram (Logical)
 ```mermaid
-flowchart LR
-	U[Analyst/Admin User] --> W[Next.js Frontend]
-	W -->|Bearer Token| A[FastAPI API]
-	A -->|Verify JWT/JWKS| X[Auth0]
-	A --> DB[(PostgreSQL)]
-	A --> F[(FAISS Index)]
-	A --> M[Yahoo Finance Tool]
-	A --> N[NewsAPI Tool]
-	A --> G[Gemini Planner/Summarizer]
-	M --> A
-	N --> A
-	G --> A
-	A --> W
+flowchart TB
+		subgraph Client[Client Layer (apps/web)]
+				FE[Next.js Frontend]
+		end
+
+		FE -->|REST + JWT| SEC[Auth0 Security Middleware]
+
+		subgraph API[API Layer (apps/api)]
+				SEC -->|Validated Context| APP[FastAPI Application]
+				APP -->|Execute Research| ORCH[Research Orchestrator]
+		end
+
+		subgraph Services[Data & AI Services]
+				DB[(PostgreSQL DB)]
+				VEC[(FAISS Vector Index)]
+				LLM[Gemini LLM\n(Planner/Synthesizer)]
+				EXT[Market & News APIs]
+		end
+
+		APP -->|CRUD (org_id scoped)| DB
+		ORCH -->|Context Retrieval| VEC
+		ORCH -->|Planning & Summary| LLM
+		ORCH -->|External Data| EXT
 ```
 
-## 3. End-to-End Data Flow
-### 3.1 Research Query Flow
-1. User submits natural-language query on dashboard.
-2. Frontend calls `POST /api/v1/research/run` (or `/run-and-save`).
-3. Backend resolves user, tenant, and role from Auth0 JWT + membership.
-4. Gemini planner proposes tool usage (`market/news/documents`) with ticker hints.
-5. Backend applies safe fallback heuristics if planner is unavailable or malformed.
-6. Tool adapters fetch market/news/document context.
-7. Orchestrator synthesizes structured sections with source citations.
-8. Optional summary is generated via Gemini with strict context inputs.
-9. `/run-and-save` additionally persists report + sections + citations.
-10. Frontend renders structured cards/tables/charts and citation details.
+## 3. High-Level Data Flow
+1. Authentication: Users authenticate via Auth0; the frontend includes the Bearer token in API requests.
+2. Context resolution: Backend validates JWT and resolves tenant context (`org_id`, `role`, `user_id`) via membership lookup.
+3. Research orchestration: `run_research` triggers Gemini-assisted planning, external data fetches (yfinance, NewsAPI), FAISS retrieval, and structured synthesis.
+4. Persistence: Reports, sections, tags, and citations are written to PostgreSQL with explicit organization scoping.
 
-### 3.2 Saved Report Retrieval Flow
-1. Frontend requests `GET /api/v1/reports` with optional `search` and `tag` filters.
-2. Backend enforces `org_id` scoping and returns only tenant-owned reports.
-3. Detail fetch `GET /api/v1/reports/{id}` returns sections + citations + tags.
-4. Users can add/remove tags via dedicated endpoints.
+## 4. Data Flow Diagram (UI Input to Rendered Output)
+```mermaid
+sequenceDiagram
+		participant U as User
+		participant W as Next.js UI
+		participant A as FastAPI
+		participant T as Auth/Tenant Middleware
+		participant O as Research Orchestrator
+		participant G as Gemini
+		participant E as External APIs
+		participant F as FAISS
+		participant D as PostgreSQL
 
-### 3.3 Organization Admin Flow
-1. Admin opens `/admin` and loads organization members.
-2. Admin creates invite code via `POST /api/v1/orgs/invites`.
-3. Invite consumer can join with `POST /api/v1/orgs/join`.
-4. Role checks enforce that invite creation is admin-only.
+		U->>W: Submit research query
+		W->>A: POST /api/v1/research/run-and-save (Bearer JWT)
+		A->>T: Validate JWT + resolve org_id/role
+		T-->>A: TenantContext(org_id, role, user_id)
+		A->>O: Execute query with tenant context
+		O->>G: Plan tools + synthesize summary
+		O->>E: Fetch market/news data
+		O->>F: Retrieve document chunks
+		O-->>A: Structured sections + citations + summary
+		A->>D: Write report/sections/citations (org_id scoped)
+		D-->>A: Persisted record IDs
+		A-->>W: Structured response JSON
+		W-->>U: Render cards/charts/citations
+```
 
-## 4. Multi-Tenant and RBAC Design
-Pattern: shared-schema tenancy with explicit `org_id` scoping.
+## 5. Database Schema / ER Diagram
+```mermaid
+erDiagram
+		ORGANIZATIONS ||--o{ ORGANIZATION_MEMBERSHIPS : has
+		USERS ||--o{ ORGANIZATION_MEMBERSHIPS : belongs_to
+		ORGANIZATIONS ||--o{ ORGANIZATION_INVITES : has
+		ORGANIZATIONS ||--o{ RESEARCH_REPORTS : owns
+		USERS ||--o{ RESEARCH_REPORTS : creates
+		RESEARCH_REPORTS ||--o{ REPORT_SECTIONS : contains
+		REPORT_SECTIONS ||--o{ REPORT_CITATIONS : cites
+		RESEARCH_REPORTS ||--o{ REPORT_TAGS : tagged_with
+		ORGANIZATIONS ||--o{ COMPANY_WATCHLISTS : tracks
 
-Controls:
-1. Tenant resolution dependency (`get_tenant_context`) maps authenticated user to membership.
-2. All tenant data queries include `WHERE org_id = current_tenant.org_id`.
-3. RBAC roles are currently `admin` and `analyst`.
-4. Admin-only operation: organization invite creation.
+		ORGANIZATIONS {
+			int id PK
+			string name
+			datetime created_at
+		}
+		USERS {
+			int id PK
+			string auth0_sub UNIQUE
+			string email
+			string full_name
+			datetime created_at
+		}
+		ORGANIZATION_MEMBERSHIPS {
+			int id PK
+			int org_id FK
+			int user_id FK
+			enum role
+		}
+		RESEARCH_REPORTS {
+			int id PK
+			int org_id FK
+			int created_by_user_id FK
+			string title
+			text query_text
+			string status
+			text summary
+			datetime created_at
+			datetime updated_at
+		}
+		REPORT_SECTIONS {
+			int id PK
+			int report_id FK
+			string title
+			text body
+			int order_index
+		}
+		REPORT_CITATIONS {
+			int id PK
+			int section_id FK
+			string source_type
+			string source_name
+			text reference
+		}
+		REPORT_TAGS {
+			int id PK
+			int report_id FK
+			string name
+		}
+		COMPANY_WATCHLISTS {
+			int id PK
+			int org_id FK
+			string ticker
+			string company_name
+			datetime created_at
+		}
+		ORGANIZATION_INVITES {
+			int id PK
+			int org_id FK
+			string code UNIQUE
+			datetime expires_at
+			datetime used_at
+			datetime created_at
+		}
+```
 
-Leak-prevention principle:
-- Any route returning tenant resources must enforce org filter at query level, not only at UI level.
+Key indexes currently implemented:
+1. `users.auth0_sub` unique index for auth lookup.
+2. `research_reports.org_id` + composite index `ix_reports_org_created(org_id, created_at)` for tenant queries.
+3. `report_tags.report_id` and `report_tags.name` for report filtering.
+4. `company_watchlists.org_id` and `company_watchlists.ticker` for tenant watchlist operations.
 
-## 5. AI Orchestration Design
-Current orchestration behavior:
-1. Parse query and infer candidate tickers.
-2. Ask Gemini for JSON tool plan:
-- `tickers`
-- `use_market_data`
-- `use_news`
-- `use_documents`
-3. Validate and sanitize plan.
-4. Execute selected tools.
-5. Assemble structured sections (`title`, `body`, `citations`).
-6. Produce executive summary (Gemini) with explicit non-hallucination instruction.
+Audit logs:
+1. Dedicated audit-event table is not yet implemented.
+2. Current traceability is through timestamps, ownership fields, and request logging.
 
-Fallback strategy:
-- If Gemini planning fails, use deterministic keyword-based logic.
+## 6. AI Orchestration Flow
+```mermaid
+flowchart LR
+		Q[User Query] --> P[Planner Stage\nGemini JSON Plan]
+		P --> V{Plan Valid?}
+		V -->|Yes| M[Select Tools]
+		V -->|No| Fallback[Deterministic Fallback Rules]
+		Fallback --> M
+		M --> MK[Market Data Tool]
+		M --> NW[News Tool]
+		M --> DR[Document Retrieval Tool]
+		MK --> AGG[Aggregate Tool Results]
+		NW --> AGG
+		DR --> AGG
+		AGG --> SYN[Gemini Summary Synthesis]
+		SYN --> OUT[Structured Output\nsections + citations + summary]
+```
 
-## 6. Data Model / ER Summary
-Core entities:
-1. `organizations`
-2. `users`
-3. `organization_memberships` (role per org)
-4. `organization_invites`
-5. `research_reports`
-6. `report_sections`
-7. `report_citations`
-8. `report_tags`
-9. `company_watchlists`
+Execution behavior:
+1. Planner decides tool usage and ticker hints.
+2. Tools execute sequentially per selected scope and produce normalized sections.
+3. Aggregated sections are optionally summarized by Gemini.
+4. Final response is returned in a typed schema (`title`, `executive_summary`, `sections`, `citations`).
 
-Main relationships:
-1. Organization 1:N Membership
-2. User 1:N Membership
-3. Report 1:N Sections
-4. Section 1:N Citations
-5. Report 1:N Tags
-6. Organization 1:N Watchlist items
+## 7. Multi-Tenant Data Flow (Isolation)
+```mermaid
+flowchart LR
+		R[HTTP Request + Bearer JWT] --> JV[JWT Verify (Auth0 JWKS)]
+		JV --> TC[Resolve TenantContext\norg_id + role + user_id]
+		TC --> RG[Route Handler]
+		RG --> QF[Apply org_id filter in query]
+		QF --> DB[(PostgreSQL)]
+		DB --> RESP[Tenant-scoped response only]
+```
 
-## 7. API Endpoint Catalog
-### Health
-1. `GET /api/v1/health`
+Isolation enforcement points:
+1. Authentication and token verification.
+2. Tenant context resolution from membership.
+3. Query-level `org_id` scoping on every tenant-owned resource.
+4. Role checks (`admin`, `analyst`) for privileged actions.
 
-### Research
-1. `POST /api/v1/research/run`
-2. `POST /api/v1/research/run-and-save`
-3. `POST /api/v1/research/ingest-documents`
+Leak-prevention guarantee:
+1. Org A and Org B requests resolve different `org_id` values.
+2. Data access is constrained by `org_id` at backend query level, not just UI filtering.
 
-### Reports
-1. `GET /api/v1/reports`
-2. `GET /api/v1/reports/{report_id}`
-3. `POST /api/v1/reports`
-4. `PATCH /api/v1/reports/{report_id}`
-5. `DELETE /api/v1/reports/{report_id}`
-6. `POST /api/v1/reports/{report_id}/tags`
-7. `DELETE /api/v1/reports/{report_id}/tags/{tag_name}`
+## 8. API Design (Methods, Auth, Request/Response)
+All endpoints are under `/api/v1`.
 
-### Organizations
-1. `GET /api/v1/orgs/members`
-2. `POST /api/v1/orgs/invites`
-3. `POST /api/v1/orgs/join`
+| Endpoint | Method | Auth | Request Shape | Response Shape |
+|---|---|---|---|---|
+| `/health` | GET | No | None | `{ status: "ok" }` |
+| `/research/run` | POST | JWT required | `{ query: string }` | `ResearchResponse` |
+| `/research/run-and-save` | POST | JWT required | `{ query: string }` | `ResearchResponse` + persisted `report_id` |
+| `/research/ingest-documents` | POST | JWT required | None | `{ status, ingested_chunks }` |
+| `/reports` | GET | JWT required | Query: `search?`, `tag?` | `ReportOut[]` (tenant scoped) |
+| `/reports/{id}` | GET | JWT required | Path: `id` | `ReportDetailOut` |
+| `/reports` | POST | JWT required | `ReportCreate` | `ReportOut` |
+| `/reports/{id}` | PATCH | JWT required | `ReportUpdate` | `ReportOut` |
+| `/reports/{id}` | DELETE | JWT required | Path: `id` | `204 No Content` |
+| `/reports/{id}/tags` | POST | JWT required | Query: `name` | `ReportOut` |
+| `/reports/{id}/tags/{tag}` | DELETE | JWT required | Path: `id`, `tag` | `ReportOut` |
+| `/watchlist` | GET | JWT required | None | `WatchlistOut[]` |
+| `/watchlist` | POST | JWT required | `WatchlistCreate` | `WatchlistOut` |
+| `/watchlist/{id}` | DELETE | JWT required | Path: `id` | `204 No Content` |
+| `/orgs/members` | GET | JWT required | None | `MembershipOut[]` |
+| `/orgs/invites` | POST | JWT required (`admin`) | None | `InviteOut` |
+| `/orgs/join` | POST | JWT required | `{ invite_code: string }` | `MembershipOut` |
 
-### Watchlist
-1. `GET /api/v1/watchlist`
-2. `POST /api/v1/watchlist`
-3. `DELETE /api/v1/watchlist/{watchlist_id}`
-
-## 8. Reliability and Security Notes
+## 9. Reliability and Security Notes
 1. Auth0 JWT verification through JWKS.
-2. Backend-only secret usage and external API calls.
-3. Tenant and RBAC guards on protected endpoints.
+2. Backend-only handling of secret API keys.
+3. Tenant and RBAC guards on protected routes.
 4. Structured response models with pydantic validation.
-5. Integration tests currently validate tenant isolation and admin gate checks.
+5. Integration tests cover tenant isolation and admin gate checks.
 
-## 9. Known Gaps / Next Hardening
-1. Add centralized retry/timeout and circuit-breaker strategy per external tool.
-2. Add structured logging and request correlation IDs.
-3. Add cache and rate-limiting policy for external API protection.
-4. Expand integration test coverage to tagging/watchlist/search workflows.
+## 10. Known Gaps / Next Hardening
+1. Add centralized retries/circuit-breakers per external tool.
+2. Add richer observability dashboards and tracing.
+3. Add dedicated audit-event persistence.
+4. Expand integration tests for failure-path behavior.
