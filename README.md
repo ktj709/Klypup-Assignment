@@ -124,12 +124,9 @@ Screenshot references:
 
 ## Next Milestones
 - Expand production hardening (caching, circuit-breakers, and richer observability)
-- Add a CI pipeline with deployment verification and smoke tests
 
-## Presentation Assets
-1. Demo script: [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md)
-2. Interview Q&A prep: [docs/INTERVIEW_QA.md](docs/INTERVIEW_QA.md)
-3. Requirement checklist: [docs/ASSESSMENT_COMPLIANCE.md](docs/ASSESSMENT_COMPLIANCE.md)
+
+
 
 ## Useful API Calls
 - POST /api/v1/research/ingest-documents

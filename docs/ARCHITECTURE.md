@@ -13,28 +13,28 @@ Primary components:
 ## 2. System Architecture Diagram (Logical)
 ```mermaid
 flowchart TB
-		subgraph Client[Client Layer (apps/web)]
-				FE[Next.js Frontend]
-		end
+    subgraph Client
+        FE[Next.js Frontend]
+    end
 
-		FE -->|REST + JWT| SEC[Auth0 Security Middleware]
+    FE -->|REST + JWT| SEC[Auth0 Security Middleware]
 
-		subgraph API[API Layer (apps/api)]
-				SEC -->|Validated Context| APP[FastAPI Application]
-				APP -->|Execute Research| ORCH[Research Orchestrator]
-		end
+    subgraph API
+        SEC -->|Validated Context| APP[FastAPI Application]
+        APP -->|Execute Research| ORCH[Research Orchestrator]
+    end
 
-		subgraph Services[Data & AI Services]
-				DB[(PostgreSQL DB)]
-				VEC[(FAISS Vector Index)]
-				LLM[Gemini LLM\n(Planner/Synthesizer)]
-				EXT[Market & News APIs]
-		end
+    subgraph Services
+        DB[(PostgreSQL DB)]
+        VEC[(FAISS Vector Index)]
+        LLM[Gemini LLM - Planner and Synthesizer]
+        EXT[Market and News APIs]
+    end
 
-		APP -->|CRUD (org_id scoped)| DB
-		ORCH -->|Context Retrieval| VEC
-		ORCH -->|Planning & Summary| LLM
-		ORCH -->|External Data| EXT
+    APP -->|CRUD org_id scoped| DB
+    ORCH -->|Context Retrieval| VEC
+    ORCH -->|Planning and Summary| LLM
+    ORCH -->|External Data| EXT
 ```
 
 ## 3. High-Level Data Flow
@@ -74,79 +74,87 @@ sequenceDiagram
 ## 5. Database Schema / ER Diagram
 ```mermaid
 erDiagram
-		ORGANIZATIONS ||--o{ ORGANIZATION_MEMBERSHIPS : has
-		USERS ||--o{ ORGANIZATION_MEMBERSHIPS : belongs_to
-		ORGANIZATIONS ||--o{ ORGANIZATION_INVITES : has
-		ORGANIZATIONS ||--o{ RESEARCH_REPORTS : owns
-		USERS ||--o{ RESEARCH_REPORTS : creates
-		RESEARCH_REPORTS ||--o{ REPORT_SECTIONS : contains
-		REPORT_SECTIONS ||--o{ REPORT_CITATIONS : cites
-		RESEARCH_REPORTS ||--o{ REPORT_TAGS : tagged_with
-		ORGANIZATIONS ||--o{ COMPANY_WATCHLISTS : tracks
+    ORGANIZATIONS ||--o{ ORGANIZATION_MEMBERSHIPS : has
+    USERS ||--o{ ORGANIZATION_MEMBERSHIPS : belongs_to
+    ORGANIZATIONS ||--o{ ORGANIZATION_INVITES : has
+    ORGANIZATIONS ||--o{ RESEARCH_REPORTS : owns
+    USERS ||--o{ RESEARCH_REPORTS : creates
+    RESEARCH_REPORTS ||--o{ REPORT_SECTIONS : contains
+    REPORT_SECTIONS ||--o{ REPORT_CITATIONS : cites
+    RESEARCH_REPORTS ||--o{ REPORT_TAGS : tagged_with
+    ORGANIZATIONS ||--o{ COMPANY_WATCHLISTS : tracks
 
-		ORGANIZATIONS {
-			int id PK
-			string name
-			datetime created_at
-		}
-		USERS {
-			int id PK
-			string auth0_sub UNIQUE
-			string email
-			string full_name
-			datetime created_at
-		}
-		ORGANIZATION_MEMBERSHIPS {
-			int id PK
-			int org_id FK
-			int user_id FK
-			enum role
-		}
-		RESEARCH_REPORTS {
-			int id PK
-			int org_id FK
-			int created_by_user_id FK
-			string title
-			text query_text
-			string status
-			text summary
-			datetime created_at
-			datetime updated_at
-		}
-		REPORT_SECTIONS {
-			int id PK
-			int report_id FK
-			string title
-			text body
-			int order_index
-		}
-		REPORT_CITATIONS {
-			int id PK
-			int section_id FK
-			string source_type
-			string source_name
-			text reference
-		}
-		REPORT_TAGS {
-			int id PK
-			int report_id FK
-			string name
-		}
-		COMPANY_WATCHLISTS {
-			int id PK
-			int org_id FK
-			string ticker
-			string company_name
-			datetime created_at
-		}
-		ORGANIZATION_INVITES {
-			int id PK
-			int org_id FK
-			string code UNIQUE
-			datetime expires_at
-			datetime used_at
-			datetime created_at
-		}
+    ORGANIZATIONS {
+        int id
+        string name
+        string created_at
+    }
+
+    USERS {
+        int id
+        string auth0_sub
+        string email
+        string full_name
+        string created_at
+    }
+
+    ORGANIZATION_MEMBERSHIPS {
+        int id
+        int org_id
+        int user_id
+        string role
+    }
+
+    RESEARCH_REPORTS {
+        int id
+        int org_id
+        int created_by_user_id
+        string title
+        string query_text
+        string status
+        string summary
+        string created_at
+        string updated_at
+    }
+
+    REPORT_SECTIONS {
+        int id
+        int report_id
+        string title
+        string body
+        int order_index
+    }
+
+    REPORT_CITATIONS {
+        int id
+        int section_id
+        string source_type
+        string source_name
+        string reference
+    }
+
+    REPORT_TAGS {
+        int id
+        int report_id
+        string name
+    }
+
+    COMPANY_WATCHLISTS {
+        int id
+        int org_id
+        string ticker
+        string company_name
+        string created_at
+    }
+
+    ORGANIZATION_INVITES {
+        int id
+        int org_id
+        string code
+        string expires_at
+        string used_at
+        string created_at
+    }
 ```
 
 Key indexes currently implemented:
@@ -185,13 +193,26 @@ Execution behavior:
 
 ## 7. Multi-Tenant Data Flow (Isolation)
 ```mermaid
-flowchart LR
-		R[HTTP Request + Bearer JWT] --> JV[JWT Verify (Auth0 JWKS)]
-		JV --> TC[Resolve TenantContext\norg_id + role + user_id]
-		TC --> RG[Route Handler]
-		RG --> QF[Apply org_id filter in query]
-		QF --> DB[(PostgreSQL)]
-		DB --> RESP[Tenant-scoped response only]
+flowchart TD
+    REQ["Incoming API Request plus Bearer JWT"] --> AUTH["Auth0 JWT Verification via JWKS"]
+    AUTH --> USER["Resolve Current User from sub"]
+    USER --> TENANT["Resolve Membership and TenantContext<br>org_id, role, user_id"]
+
+    TENANT --> GATE{"RBAC Check"}
+    GATE -->|Allowed| HANDLER["Route Handler"]
+    GATE -->|Denied| FORBID["403 Forbidden"]
+
+    HANDLER --> FILTER["Apply org_id filter on tenant-owned query"]
+    FILTER --> DATA[("PostgreSQL or Supabase")]
+    DATA --> SCOPED["Tenant-scoped rows only"]
+    SCOPED --> RESP["API Response"]
+
+    subgraph IG["Isolation Guarantee"]
+        A1["Org A token gives org_id A"]
+        B1["Org B token gives org_id B"]
+        A1 --> A2["Queries constrained to org_id A"]
+        B1 --> B2["Queries constrained to org_id B"]
+    end
 ```
 
 Isolation enforcement points:
@@ -239,3 +260,26 @@ All endpoints are under `/api/v1`.
 2. Add richer observability dashboards and tracing.
 3. Add dedicated audit-event persistence.
 4. Expand integration tests for failure-path behavior.
+
+## 11. System Entity Mapping
+The following sequence view captures the system entity mapping for the research execution path, aligned with the architecture interaction flow.
+
+```mermaid
+sequenceDiagram
+	participant RC as ResearchConsole (apps/web)
+	participant RR as Research Router (apps/api)
+	participant OR as Orchestrator (orchestrator.py)
+	participant GS as GeminiService (gemini_service.py)
+	participant TA as Tool Adapters (market/news/docs)
+
+	RC->>RR: POST /research/run-and-save
+	RR->>OR: run_research(query)
+	OR->>GS: plan_tools(query)
+	GS-->>OR: ToolPlan (JSON)
+	OR->>TA: Execute selected tools
+	TA-->>OR: Data Results
+	OR->>GS: synthesize_summary(context)
+	OR-->>RR: ResearchResponse
+	RR->>RR: Persist ResearchReport & ReportSection
+	RR-->>RC: report_id
+```
