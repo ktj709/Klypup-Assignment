@@ -46,8 +46,8 @@ This checklist maps implementation status against the Klypup Applied AI Intern a
 - [x] DECISIONS document (expanded).
 - [x] .env examples for backend and frontend.
 - [x] Seed script for demo org/users.
-- [~] README screenshots section should be finalized with 4-6 real images before submission.
-- [~] Live deployment URL is pending (bonus, but recommended if feasible).
+- [x] README screenshots section finalized with 6 real images.
+- [x] Live deployment URLs provided (frontend and backend).
 
 ## 7) Demo Coverage (Section 4.4)
 Target workflows prepared:
@@ -57,5 +57,4 @@ Target workflows prepared:
 
 ## 8) Risk and Remaining Hardening
 1. Add caching and explicit rate-limit protection for external tools.
-2. Finalize screenshots and optional deployment.
-3. Expand test depth for failure paths (external timeouts, fallback behavior), beyond current happy-path and isolation coverage.
+2. Expand test depth for failure paths (external timeouts, fallback behavior), beyond current happy-path and isolation coverage.

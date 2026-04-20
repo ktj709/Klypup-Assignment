@@ -352,9 +352,11 @@ Screenshot placeholders:
 
 ## 15. What Is Still Manual
 
-Before final submission, manually add:
-1. Real screenshots under docs/screenshots.
-2. Optional deployment URL if you choose to include a live demo bonus.
+Submission status:
+1. Real screenshots are added under docs/screenshots.
+2. Live deployment URLs are available:
+- Frontend: https://klypup-assignment.vercel.app/
+- Backend: https://klypup-assignment-final.onrender.com
 
 ## 16. Quick Troubleshooting
 

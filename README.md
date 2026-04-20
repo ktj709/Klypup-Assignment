@@ -81,8 +81,8 @@ Option A was selected because it provides a strong balance of product impact and
 3. RBAC behavior
    - Show admin invite-code creation and non-admin restriction.
 
-## Screenshots (Add Before Submission)
-Please add 4-6 screenshots in `docs/screenshots/` and reference them here.
+## Screenshots
+Submission screenshots are available in `docs/screenshots/`.
 
 Suggested captures:
 1. Home dashboard (recent research + quick actions + bookmarks)
@@ -92,7 +92,7 @@ Suggested captures:
 5. Admin page with invite code generation
 6. Tenant isolation demonstration (two org contexts)
 
-Planned screenshot references:
+Screenshot references:
 1. [Home Dashboard](docs/screenshots/01-home-dashboard.png)
 2. [Research Result](docs/screenshots/02-research-result.png)
 3. [Reports with Search and Tags](docs/screenshots/03-reports-search-tags.png)
@@ -100,9 +100,13 @@ Planned screenshot references:
 5. [Admin Invite Workflow](docs/screenshots/05-admin-invite.png)
 6. [Tenant Isolation Proof](docs/screenshots/06-tenant-isolation-demo.png)
 
+## Live Deployment URLs
+1. Frontend (Vercel): https://klypup-assignment.vercel.app/
+2. Backend (Render): https://klypup-assignment-final.onrender.com
+
 ## Known Limitations
 1. Full circuit-breaker and distributed caching policy is not yet implemented.
-2. Live deployment URL is not included yet.
+2. Local FAISS retrieval is optimized for assessment-scale data, not large production corpora.
 
 ## Current Status
 - Baseline monorepo scaffold complete
@@ -119,8 +123,8 @@ Planned screenshot references:
 - Integration tests cover tenant isolation, RBAC, report tagging/search, and watchlist CRUD isolation
 
 ## Next Milestones
-- Add deployment and final demo assets
-- Add final screenshots to complete deliverable checklist
+- Expand production hardening (caching, circuit-breakers, and richer observability)
+- Add a CI pipeline with deployment verification and smoke tests
 
 ## Presentation Assets
 1. Demo script: [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md)

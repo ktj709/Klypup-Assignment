@@ -1,6 +1,6 @@
-# Screenshot Placeholders
+# Submitted Screenshots
 
-Add 4-6 PNG screenshots before final submission. Recommended names:
+The following screenshot assets are included for final submission:
 
 1. 01-home-dashboard.png
 2. 02-research-result.png
@@ -9,4 +9,4 @@ Add 4-6 PNG screenshots before final submission. Recommended names:
 5. 05-admin-invite.png
 6. 06-tenant-isolation-demo.png
 
-After adding images, ensure README links render correctly.
+These files are referenced from the repository README.
