@@ -1,4 +1,5 @@
 import json
+import logging
 import re
 from typing import Any
 
@@ -7,6 +8,8 @@ from google.genai import types
 
 from app.core.config import get_settings
 from app.schemas.research import Section
+
+logger = logging.getLogger("klypup.gemini")
 
 
 def _extract_json_object(text: str) -> dict[str, Any] | None:
@@ -22,6 +25,7 @@ def _extract_json_object(text: str) -> dict[str, Any] | None:
 def plan_tools(query: str) -> dict[str, Any] | None:
     settings = get_settings()
     if not settings.gemini_api_key:
+        logger.debug("Gemini API key not configured; skipping planner")
         return None
 
     client = genai.Client(api_key=settings.gemini_api_key)
@@ -40,11 +44,13 @@ def plan_tools(query: str) -> dict[str, Any] | None:
             config=types.GenerateContentConfig(temperature=0.0),
             contents=f"{instruction}\n\nQuery:\n{query}",
         )
-    except Exception:
+    except Exception as exc:
+        logger.warning(f"Gemini planner error: {exc}")
         return None
 
     parsed = _extract_json_object(response.text or "")
     if not parsed:
+        logger.warning(f"Gemini planner returned invalid JSON: {response.text}")
         return None
 
     tickers_raw = parsed.get("tickers", [])
@@ -61,6 +67,7 @@ def plan_tools(query: str) -> dict[str, Any] | None:
 def synthesize_summary(query: str, sections: list[Section], tools_used: list[str]) -> str | None:
     settings = get_settings()
     if not settings.gemini_api_key:
+        logger.debug("Gemini API key not configured; skipping synthesis")
         return None
 
     client = genai.Client(api_key=settings.gemini_api_key)
@@ -89,7 +96,8 @@ def synthesize_summary(query: str, sections: list[Section], tools_used: list[str
             config=types.GenerateContentConfig(temperature=0.2),
             contents=f"{instruction}\n\nData:\n{json.dumps(prompt_payload)}",
         )
-    except Exception:
+    except Exception as exc:
+        logger.warning(f"Gemini synthesis error: {exc}")
         return None
 
     text = (response.text or "").strip()

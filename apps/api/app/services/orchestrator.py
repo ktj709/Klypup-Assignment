@@ -8,12 +8,20 @@ from app.services.news_data import fetch_news
 
 
 def _extract_tickers(query: str) -> list[str]:
-    # A lightweight ticker guesser for MVP; replace with robust NER later.
+    # Extract potential ticker symbols and company names from query.
+    # First, try 1-5 letter uppercase words (classic ticker format).
     candidates = re.findall(r"\b[A-Z]{1,5}\b", query)
+    
+    # Also capture longer capitalized words that might be company names (e.g., LensKart, Apple, Microsoft).
+    candidates.extend(re.findall(r"\b[A-Z][a-z]*(?:[A-Z][a-z]*)*\b", query))
+    
+    # Filter out common English words that aren't tickers/companies.
+    common_words = {"Give", "Me", "For", "The", "And", "Or", "Is", "A", "An", "In", "On", "At", "To", "From", "By", "With"}
+    
     seen: set[str] = set()
     tickers: list[str] = []
     for candidate in candidates:
-        if candidate not in seen:
+        if candidate not in seen and candidate not in common_words and len(candidate) >= 2:
             seen.add(candidate)
             tickers.append(candidate)
     return tickers[:5]
@@ -45,6 +53,10 @@ def run_research(request: ResearchRequest) -> ResearchResponse:
         use_market_data = plan.get("use_market_data", use_market_data)
         use_news = plan.get("use_news", use_news)
         use_documents = plan.get("use_documents", use_documents)
+    else:
+        # Fallback heuristic: if we have tickers or company names, fetch news and market data
+        if tickers:
+            use_news = True
 
     sections: list[Section] = []
     tools_used: list[str] = []
@@ -54,25 +66,28 @@ def run_research(request: ResearchRequest) -> ResearchResponse:
         market_citations: list[Citation] = []
         for ticker in tickers:
             snapshot = fetch_market_snapshot(ticker)
-            market_lines.append(
-                f"{snapshot.ticker}: price={snapshot.current_price}, market_cap={snapshot.market_cap}, P/E={snapshot.pe_ratio}, revenue={snapshot.revenue}"
-            )
-            market_citations.append(
-                Citation(
-                    source_type="api",
-                    source_name="Yahoo Finance",
-                    reference=f"yfinance:{snapshot.ticker}",
+            # Only add to sections if we have valid market data
+            if snapshot.current_price is not None:
+                market_lines.append(
+                    f"{snapshot.ticker}: price={snapshot.current_price}, market_cap={snapshot.market_cap}, P/E={snapshot.pe_ratio}, revenue={snapshot.revenue}"
+                )
+                market_citations.append(
+                    Citation(
+                        source_type="api",
+                        source_name="Yahoo Finance",
+                        reference=f"yfinance:{snapshot.ticker}",
+                    )
+                )
+
+        if market_lines:
+            sections.append(
+                Section(
+                    title="Market Snapshot",
+                    body="\n".join(market_lines),
+                    citations=market_citations,
                 )
             )
-
-        sections.append(
-            Section(
-                title="Market Snapshot",
-                body="\n".join(market_lines),
-                citations=market_citations,
-            )
-        )
-        tools_used.append("market_data")
+            tools_used.append("market_data")
 
     if use_news:
         company = tickers[0] if tickers else query.split(" ")[0]
